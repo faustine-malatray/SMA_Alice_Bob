@@ -17,6 +17,7 @@ class SpeakingAgent(CommunicatingAgent):
     def __init__(self, unique_id, model, name):
         super().__init__(unique_id, model, name)
         self.__v = random.randint(0, 1000)
+        self.name = name
 
     def step(self):
         super().step()
@@ -36,18 +37,18 @@ class SpeakingAgent(CommunicatingAgent):
                 value = mess.get_content()
                 if self.__v == value:
                     message = Message(
-                        self, sender, MessagePerformative.ACCEPT, "ok tiptop"
+                        self.name, sender, MessagePerformative.ACCEPT, "ok tiptop"
                     )
                 else:
                     message = Message(
-                        self, sender, MessagePerformative.PROPOSE, self.__v
+                        self.name, sender, MessagePerformative.PROPOSE, self.__v
                     )
 
         # if on a reçu un commit
         if len(self.get_messages_from_performative(MessagePerformative.COMMIT)) >= 1:
             for mess in self.get_messages_from_performative(MessagePerformative.COMMIT):
                 sender = mess.get_exp()
-                message = Message(self, sender, MessagePerformative.ACCEPT, "ok tiptop")
+                message = Message(self.name, sender, MessagePerformative.ACCEPT, "ok tiptop")
 
         if message:
             self.send_message(message)
@@ -58,6 +59,7 @@ class ControlAgent(CommunicatingAgent):
     def __init__(self, unique_id, model, name):
         super().__init__(unique_id, model, name)
         self.__v = random.randint(0, 1000)
+        self.name = name
 
     def step(self):
         super().step()
@@ -73,7 +75,7 @@ class ControlAgent(CommunicatingAgent):
             ):
                 sender = mess.get_exp()
                 message = Message(
-                    self, sender, MessagePerformative.INFORM_REF, self.__v
+                    self.name, sender, MessagePerformative.INFORM_REF, self.__v
                 )
 
         # if on a recu des propose
@@ -84,10 +86,11 @@ class ControlAgent(CommunicatingAgent):
                 sender = mess.get_exp()
                 value = mess.get_content()
                 self.__v = value
-                message = Message(self, sender, MessagePerformative.COMMIT, self.__v)
+                message = Message(self.name, sender, MessagePerformative.COMMIT, self.__v)
 
         if len(self.get_messages_from_performative(MessagePerformative.ACCEPT)) >= 1:
             pass
+
         if message:
             self.send_message(message)
             print(message.__str__())
