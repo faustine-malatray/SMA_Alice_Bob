@@ -38,11 +38,13 @@ class SpeakingAgent(CommunicatingAgent):
                     sender = mess.get_exp()
                     message = Message(self.name, sender,
                                       MessagePerformative.ACCEPT, "ok tiptop")
+                    self.send_message(message)
+                    print(message.__str__())
 
             # if on a reçu des inform_ref
-            elif (new_messages.intersection(set(self.get_messages_from_performative(
-                    MessagePerformative.INFORM_REF)))
-                  ):
+            if (new_messages.intersection(set(self.get_messages_from_performative(
+                MessagePerformative.INFORM_REF)))
+                ):
                 for mess in new_messages.intersection(set(self.get_messages_from_performative(
                         MessagePerformative.INFORM_REF))):
                     sender = mess.get_exp()
@@ -51,14 +53,14 @@ class SpeakingAgent(CommunicatingAgent):
                         message = Message(
                             self.name, sender, MessagePerformative.ACCEPT, "ok tiptop"
                         )
+                        self.send_message(message)
+                        print(message.__str__())
                     else:
                         message = Message(
                             self.name, sender, MessagePerformative.PROPOSE, self.__v
                         )
-
-            if message:
-                self.send_message(message)
-                print(message.__str__())
+                        self.send_message(message)
+                        print(message.__str__())
 
         # sinon, pas de message en attente
 
@@ -79,6 +81,7 @@ class ControlAgent(CommunicatingAgent):
     def step(self):
         # il faut recevoir les messages
         new_messages = set(self.get_new_messages())
+        # print([mess.__str__() for mess in new_messages])
         message = None
 
         if new_messages:
@@ -86,26 +89,29 @@ class ControlAgent(CommunicatingAgent):
                 pass
 
             # if on a recu des propose
-            elif new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.PROPOSE))):
+            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.PROPOSE))):
                 for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.PROPOSE))):
                     sender = mess.get_exp()
                     value = mess.get_content()
                     self.__v = value
                     message = Message(self.name, sender,
                                       MessagePerformative.COMMIT, self.__v)
+                    self.send_message(message)
+                    print(message.__str__())
 
             # if on a reçu des query
-            elif new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
+            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
                 # je le lis, j'identifie la valeur et l'envoyeur
+                print([mess.__str__() for mess in new_messages.intersection(
+                    set(self.get_messages_from_performative(MessagePerformative.QUERY_REF)))])
                 for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
+                    print(mess)
                     sender = mess.get_exp()
                     message = Message(
                         self.name, sender, MessagePerformative.INFORM_REF, self.__v
                     )
-
-            if message:
-                self.send_message(message)
-                print(message.__str__())
+                    self.send_message(message)
+                    print(message.__str__())
 
 
 ##################################
