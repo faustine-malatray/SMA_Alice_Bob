@@ -26,51 +26,62 @@ class SpeakingAgent(CommunicatingAgent):
     def get_v(self):
         return self.__v
 
+    def send_specific_message(self, message_received, performative):
+        sender = message_received.get_exp()
+        if performative.__str__() == "PROPOSE":
+            content = self.get_v()
+        elif performative.__str__() == "ACCEPT":
+            content = "ok tiptop"
+        elif performative.__str__() == "QUERY_REF":
+            content = "v?"
+        message = Message(self.name, sender, performative, content)
+        self.send_message(message)
+        print(message.__str__())
+
     def step(self):
+        if self.model.running:
+            self.step_running()
+        else:
+            self.step_batch()
+
+    def step_running(self):
         # il faut recevoir les messages
         new_messages = set(self.get_new_messages())
         message = None
 
         if new_messages:
-            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
-                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
-                    sender = mess.get_exp()
-                    message = Message(self.name, sender,
-                                      MessagePerformative.QUERY_REF, "v?")
-                    self.send_message(message)
-                    print(message.__str__())
+            new_ask_why = new_messages.intersection(
+                set(self.get_messages_from_performative(MessagePerformative.ASK_WHY)))
+            if new_ask_why:
+                for mess in new_ask_why:
+                    self.send_specific_message(
+                        mess, MessagePerformative.QUERY_REF)
 
             # if on a reçu un commit
-            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.COMMIT))):
-                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.COMMIT))):
-                    sender = mess.get_exp()
-                    message = Message(self.name, sender,
-                                      MessagePerformative.ACCEPT, "ok tiptop")
-                    self.send_message(message)
-                    print(message.__str__())
+            new_commit = new_messages.intersection(
+                set(self.get_messages_from_performative(MessagePerformative.COMMIT)))
+            if new_commit:
+                for mess in new_commit:
+                    self.send_specific_message(
+                        mess, MessagePerformative.ACCEPT)
 
             # if on a reçu des inform_ref
-            if (new_messages.intersection(set(self.get_messages_from_performative(
-                    MessagePerformative.INFORM_REF)))
-                    ):
-                for mess in new_messages.intersection(set(self.get_messages_from_performative(
-                        MessagePerformative.INFORM_REF))):
-                    sender = mess.get_exp()
+            new_inform_ref = new_messages.intersection(set(self.get_messages_from_performative(
+                MessagePerformative.INFORM_REF)))
+            if new_inform_ref:
+                for mess in new_inform_ref:
                     value = mess.get_content()
                     if self.__v == value:
-                        message = Message(
-                            self.name, sender, MessagePerformative.ACCEPT, "ok tiptop"
-                        )
-                        self.send_message(message)
-                        print(message.__str__())
+                        self.send_specific_message(
+                            mess, MessagePerformative.ACCEPT)
                     else:
-                        message = Message(
-                            self.name, sender, MessagePerformative.PROPOSE, self.__v
-                        )
-                        self.send_message(message)
-                        print(message.__str__())
+                        self.send_specific_message(
+                            mess, MessagePerformative.PROPOSE)
 
         # sinon, pas de message en attente
+
+    def step_batch(self):
+        pass
 
 
 ##################################
@@ -86,45 +97,58 @@ class ControlAgent(CommunicatingAgent):
     def get_v(self):
         return self.__v
 
+    def send_specific_message(self, message_received, performative):
+        sender = message_received.get_exp()
+        if performative.__str__() == "COMMIT":
+            content = self.get_v()
+        elif performative.__str__() == "ASK_WHY":
+            content = "pourquoi cette requête ?"
+        else:
+            content = self.get_v()
+        message = Message(self.name, sender, performative, content)
+        self.send_message(message)
+        print(message.__str__())
+
     def step(self):
+        if self.model.running:
+            self.step_running()
+        else:
+            self.step_batch()
+
+    def step_running(self):
         # il faut recevoir les messages
         new_messages = set(self.get_new_messages())
         # print([mess.__str__() for mess in new_messages])
         message = None
 
         if new_messages:
-            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
-                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
-                    sender = mess.get_exp()
-                    message = Message(self.name, sender,
-                                      MessagePerformative.ACCEPT, "on termine alors !")
-                    self.send_message(message)
-                    print(message.__str__())
+            new_accept = new_messages.intersection(
+                set(self.get_messages_from_performative(MessagePerformative.ACCEPT)))
+            if new_accept:
+                for mess in new_accept:
+                    self.send_specific_message(
+                        mess, MessagePerformative.ASK_WHY)
 
             # if on a recu des propose
-            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.PROPOSE))):
-                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.PROPOSE))):
-                    sender = mess.get_exp()
-                    value = mess.get_content()
-                    self.__v = value
-                    message = Message(self.name, sender,
-                                      MessagePerformative.COMMIT, self.__v)
-                    self.send_message(message)
-                    print(message.__str__())
+            new_propose = new_messages.intersection(
+                set(self.get_messages_from_performative(MessagePerformative.PROPOSE)))
+            if new_propose:
+                for mess in new_propose:
+                    self.__v = mess.get_content()
+                    self.send_specific_message(
+                        mess, MessagePerformative.COMMIT)
 
             # if on a reçu des query
-            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
+            new_query_ref = new_messages.intersection(
+                set(self.get_messages_from_performative(MessagePerformative.QUERY_REF)))
+            if new_query_ref:
                 # je le lis, j'identifie la valeur et l'envoyeur
-                # print([mess.__str__() for mess in new_messages.intersection(
-                #     set(self.get_messages_from_performative(MessagePerformative.QUERY_REF)))])
-                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
-                    # print(mess)
-                    sender = mess.get_exp()
-                    message = Message(
-                        self.name, sender, MessagePerformative.INFORM_REF, self.__v
-                    )
-                    self.send_message(message)
-                    print(message.__str__())
+                for mess in new_query_ref:
+                    self.send_specific_message(
+                        mess, MessagePerformative.INFORM_REF)
+
+    def step_batch(self):
+        pass
 
 
 ##################################
@@ -141,8 +165,6 @@ class SpeakingModel(Model):
         self.running = True
 
     def step(self):
-        # self.__message_service.get_instance(.set_instant_delivery(False)
-        # self.__messages_service.dispatch_messages()
         self.schedule.step()
 
 
