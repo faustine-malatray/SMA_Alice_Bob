@@ -32,6 +32,14 @@ class SpeakingAgent(CommunicatingAgent):
         message = None
 
         if new_messages:
+            if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
+                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
+                    sender = mess.get_exp()
+                    message = Message(self.name, sender,
+                                      MessagePerformative.QUERY_REF, "v?")
+                    self.send_message(message)
+                    print(message.__str__())
+
             # if on a reçu un commit
             if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.COMMIT))):
                 for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.COMMIT))):
@@ -43,8 +51,8 @@ class SpeakingAgent(CommunicatingAgent):
 
             # if on a reçu des inform_ref
             if (new_messages.intersection(set(self.get_messages_from_performative(
-                MessagePerformative.INFORM_REF)))
-                ):
+                    MessagePerformative.INFORM_REF)))
+                    ):
                 for mess in new_messages.intersection(set(self.get_messages_from_performative(
                         MessagePerformative.INFORM_REF))):
                     sender = mess.get_exp()
@@ -86,7 +94,12 @@ class ControlAgent(CommunicatingAgent):
 
         if new_messages:
             if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
-                pass
+                for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.ACCEPT))):
+                    sender = mess.get_exp()
+                    message = Message(self.name, sender,
+                                      MessagePerformative.ACCEPT, "on termine alors !")
+                    self.send_message(message)
+                    print(message.__str__())
 
             # if on a recu des propose
             if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.PROPOSE))):
@@ -102,10 +115,10 @@ class ControlAgent(CommunicatingAgent):
             # if on a reçu des query
             if new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
                 # je le lis, j'identifie la valeur et l'envoyeur
-                print([mess.__str__() for mess in new_messages.intersection(
-                    set(self.get_messages_from_performative(MessagePerformative.QUERY_REF)))])
+                # print([mess.__str__() for mess in new_messages.intersection(
+                #     set(self.get_messages_from_performative(MessagePerformative.QUERY_REF)))])
                 for mess in new_messages.intersection(set(self.get_messages_from_performative(MessagePerformative.QUERY_REF))):
-                    print(mess)
+                    # print(mess)
                     sender = mess.get_exp()
                     message = Message(
                         self.name, sender, MessagePerformative.INFORM_REF, self.__v
